@@ -4,43 +4,92 @@ import 'dart:convert';
 
 void main() {
   runApp(MaterialApp(
+    title: 'User Manager Pro',
     home: const MenuPrincipal(),
     debugShowCheckedModeBanner: false,
-    theme: ThemeData(primarySwatch: Colors.deepPurple, useMaterial3: true),
+    theme: ThemeData(
+      useMaterial3: true,
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: Colors.indigo,
+        brightness: Brightness.light,
+      ),
+    ),
   ));
 }
 
-// --- ETAPA 1: MENU PRINCIPAL ---
+// --- TELA 1: MENU PRINCIPAL (ESTILIZADA) ---
 class MenuPrincipal extends StatelessWidget {
   const MenuPrincipal({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Gerenciador Full Stack")),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            ElevatedButton.icon(
-              icon: const Icon(Icons.person_add),
-              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const TelaCadastro())),
-              label: const Text("CADASTRAR USUÁRIO"),
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton.icon(
-              icon: const Icon(Icons.list),
-              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const TelaListagem())),
-              label: const Text("LISTAR E GERENCIAR"),
-            ),
-          ],
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Colors.indigo.shade800, Colors.indigo.shade500],
+          ),
         ),
+        child: Center(
+          child: Card(
+            elevation: 10,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            child: Padding(
+              padding: const EdgeInsets.all(40.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.account_tree_rounded, size: 80, color: Colors.indigo),
+                  const SizedBox(height: 20),
+                  const Text(
+                    "Gerenciador FullStack",
+                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                  ),
+                  const Text("Desenvolvido por Felipe Salazar", style: TextStyle(color: Colors.grey)),
+                  const SizedBox(height: 40),
+                  _buildMenuButton(
+                    context, 
+                    "CADASTRAR", 
+                    Icons.person_add_alt_1, 
+                    const TelaCadastro()
+                  ),
+                  const SizedBox(height: 15),
+                  _buildMenuButton(
+                    context, 
+                    "LISTAR E GERENCIAR", 
+                    Icons.view_list_rounded, 
+                    const TelaListagem()
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMenuButton(BuildContext context, String label, IconData icon, Widget tela) {
+    return SizedBox(
+      width: 250,
+      height: 50,
+      child: ElevatedButton.icon(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.indigo,
+          foregroundColor: Colors.white,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+        icon: Icon(icon),
+        onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => tela)),
+        label: Text(label, style: const TextStyle(fontWeight: FontWeight.bold)),
       ),
     );
   }
 }
 
-// --- ETAPA 2: TELA DE CADASTRO (POST) ---
+// --- TELA 2: CADASTRO (POST) ---
 class TelaCadastro extends StatefulWidget {
   const TelaCadastro({super.key});
   @override
@@ -48,22 +97,22 @@ class TelaCadastro extends StatefulWidget {
 }
 
 class _TelaCadastroState extends State<TelaCadastro> {
-  final _nomeController = TextEditingController();
-  final _emailController = TextEditingController();
+  final _nomeCtrl = TextEditingController();
+  final _emailCtrl = TextEditingController();
 
-  Future<void> salvarUsuario() async {
+  Future<void> salvar() async {
+    if (_nomeCtrl.text.isEmpty || _emailCtrl.text.isEmpty) return;
     try {
-      final response = await http.post(
+      final res = await http.post(
         Uri.parse('http://localhost:3000/users'),
         headers: {"Content-Type": "application/json"},
-        body: jsonEncode({"nome": _nomeController.text, "email": _emailController.text}),
+        body: jsonEncode({"nome": _nomeCtrl.text, "email": _emailCtrl.text}),
       );
-
-      if (response.statusCode == 201) {
-        _nomeController.clear();
-        _emailController.clear();
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("✅ Usuário cadastrado!")));
+      if (res.statusCode == 201) {
         Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("✨ Usuário criado com sucesso!"), backgroundColor: Colors.green),
+        );
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("❌ Erro de conexão")));
@@ -73,23 +122,55 @@ class _TelaCadastroState extends State<TelaCadastro> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Novo Cadastro")),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-            TextField(controller: _nomeController, decoration: const InputDecoration(labelText: "Nome")),
-            TextField(controller: _emailController, decoration: const InputDecoration(labelText: "E-mail")),
-            const SizedBox(height: 30),
-            ElevatedButton(onPressed: salvarUsuario, child: const Text("Salvar"))
-          ],
+      appBar: AppBar(title: const Text("Novo Cadastro"), centerTitle: true),
+      body: Center(
+        child: SingleChildScrollView(
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 500), // Correção aplicada aqui!
+            padding: const EdgeInsets.all(30),
+            child: Column(
+              children: [
+                TextField(
+                  controller: _nomeCtrl,
+                  decoration: InputDecoration(
+                    labelText: "Nome Completo",
+                    prefixIcon: const Icon(Icons.person),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                TextField(
+                  controller: _emailCtrl,
+                  decoration: InputDecoration(
+                    labelText: "E-mail",
+                    prefixIcon: const Icon(Icons.email),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
+                  ),
+                ),
+                const SizedBox(height: 40),
+                SizedBox(
+                  width: double.infinity,
+                  height: 55,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.indigo,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                    ),
+                    onPressed: salvar,
+                    child: const Text("FINALIZAR CADASTRO", style: TextStyle(fontSize: 16)),
+                  ),
+                )
+              ],
+            ),
+          ),
         ),
       ),
     );
   }
 }
 
-// --- ETAPA 3: TELA DE LISTAGEM (GET, PUT, DELETE) ---
+// --- TELA 3: LISTAGEM (GET, PUT, DELETE) ---
 class TelaListagem extends StatefulWidget {
   const TelaListagem({super.key});
   @override
@@ -97,15 +178,15 @@ class TelaListagem extends StatefulWidget {
 }
 
 class _TelaListagemState extends State<TelaListagem> {
-  Future<List> buscarUsuarios() async {
-    final response = await http.get(Uri.parse('http://localhost:3000/users'));
-    return jsonDecode(response.body);
+  Future<List> buscar() async {
+    final res = await http.get(Uri.parse('http://localhost:3000/users'));
+    return jsonDecode(res.body);
   }
 
-  Future<void> deletarUsuario(int id) async {
+  Future<void> deletar(int id) async {
     await http.delete(Uri.parse('http://localhost:3000/users/$id'));
-    setState(() {}); // Atualiza a tela
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("🗑️ Usuário removido")));
+    setState(() {}); // Recarrega a lista
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("🗑️ Removido")));
   }
 
   void mostrarDialogoEdicao(Map usuario) {
@@ -145,30 +226,40 @@ class _TelaListagemState extends State<TelaListagem> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Gerenciar Banco")),
+      appBar: AppBar(title: const Text("Usuários Ativos"), centerTitle: true),
       body: FutureBuilder<List>(
-        future: buscarUsuarios(),
-        builder: (context, snapshot) {
-          if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
-          final lista = snapshot.data!;
+        future: buscar(),
+        builder: (context, snap) {
+          if (!snap.hasData) return const Center(child: CircularProgressIndicator());
+          final lista = snap.data!;
           return ListView.builder(
+            padding: const EdgeInsets.all(15),
             itemCount: lista.length,
-            itemBuilder: (context, i) => ListTile(
-              leading: const Icon(Icons.person),
-              title: Text(lista[i]['nome']),
-              subtitle: Text(lista[i]['email']),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.edit, color: Colors.blue),
-                    onPressed: () => mostrarDialogoEdicao(lista[i]),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.delete, color: Colors.red),
-                    onPressed: () => deletarUsuario(lista[i]['id']),
-                  ),
-                ],
+            itemBuilder: (context, i) => Card(
+              elevation: 2,
+              margin: const EdgeInsets.only(bottom: 12),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+              child: ListTile(
+                contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                leading: CircleAvatar(
+                  backgroundColor: Colors.indigo.shade100,
+                  child: Text(lista[i]['nome'][0].toUpperCase(), style: const TextStyle(color: Colors.indigo)),
+                ),
+                title: Text(lista[i]['nome'], style: const TextStyle(fontWeight: FontWeight.bold)),
+                subtitle: Text(lista[i]['email']),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.edit_note, color: Colors.blue),
+                      onPressed: () => mostrarDialogoEdicao(lista[i]),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.delete_sweep_rounded, color: Colors.redAccent),
+                      onPressed: () => deletar(lista[i]['id']),
+                    ),
+                  ],
+                ),
               ),
             ),
           );
